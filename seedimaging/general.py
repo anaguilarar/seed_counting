@@ -17,7 +17,16 @@ import copy
 import math
 import matplotlib.pyplot as plt
 
-
+def get_boundingboxfromseg(mask):
+    
+    pos = np.where(mask)
+    xmin = np.min(pos[1])
+    xmax = np.max(pos[1])
+    ymin = np.min(pos[0])
+    ymax = np.max(pos[0])
+    
+    return([xmin, ymin, xmax, ymax])
+  
 def getmidlewidthcoordinates(pinit,pfinal,alpha):
 
   xhalf=pfinal[0] - math.cos(alpha) * euclidean_distance(pinit,pfinal)/2
@@ -90,7 +99,7 @@ class RiceSeeds(modellib.MaskRCNN):
 
         col = self.maskcolors[id]
 
-        imgclipped = copy.deepcopy(self._clip_image(self.image, id = id))
+        imgclipped = copy.deepcopy(self._clip_image(self.image, self.bbs[id]))
         maskimage = copy.deepcopy(self._get_mask(id = id, pad_factor=None))
 
         img = _apply_mask(imgclipped, (maskimage*1).astype(np.uint8), col, alpha=0.2)
@@ -117,24 +126,64 @@ class RiceSeeds(modellib.MaskRCNN):
 
         return m
 
-    def _clip_image(self, image, id = None):
-
-        imgclipped = image[
-            self.bb[id][0]:self.bb[id][2],self.bb[id][1]:self.bb[id][3]] 
-
-        return imgclipped
-
     def _get_mask(self, id = None, pad_factor = 2):
         if id is None:
             id = 0
-        maskimage = self._clip_image(self.masks[:,:,id], id)
+        if self._size is not None:
+          maskc, bb = self._resize_mask(self.masks[:,:,id]*1, self._size)
+          maskc = maskc.astype(bool)
+        else:
+            maskc = self.masks[:,:,id]
+            bb = self.bbs[id]
+            
+        maskimage = self._clip_image(self.masks[:,:,id], bb)
         if pad_factor is not None:
             maskimage = pad_mask_images(maskimage, padding_factor=pad_factor)
             
         return maskimage
+    
+    @staticmethod
+    def _clip_image(image, bb):
 
-    def _find_contours(self, id):
+        imgclipped = image[
+            bb[0]:bb[2],bb[1]:bb[3]] 
+
+        return imgclipped
+     
+    @staticmethod
+    def _resize_mask(maskimg, new_size):
+        imgc = (maskimg).astype(np.uint16)
+        imgc = cv2.resize(imgc, [new_size[1],new_size[0]], 
+                                  interpolation = cv2.INTER_AREA)
+        bb = get_boundingboxfromseg(imgc)
+        
+        return imgc, bb
+        
+    
+    def _original_size(self, original_size):
+        """
+        Resize masks and bounding boxes to original image size.
+        """
+        
+        msksc = np.zeros((original_size[0],original_size[1], self.masks.shape[2]))
+        bbsc = [0]* self.masks.shape[2]
+        
+        for i in range(msksc.shape[2]):
+            imgc = (self.masks[:,:,i]*1).astype(np.uint8)
+            msksc[:,:,i] = cv2.resize(imgc, 
+                                  [original_size[1],original_size[0]], 
+                                  interpolation = cv2.INTER_AREA)
+            msksc[:,:,i] = msksc[:,:,i] == 1
+            if len(bbsc)>0 and np.sum(msksc[:,:,i])>0:
+                bbsc[i] = get_boundingboxfromseg(msksc[:,:,i])
+            #else:
+            #    bbsc[i] = []
+        self.masks = msksc.astype(bool)
+        self.bbs = np.array(bbsc)
+    
+    def _find_contours(self, id, resize = None):
         maskimage = self._get_mask(id)
+          
         imgmas = (maskimage*255).astype(np.uint8)
         contours, _ = cv2.findContours(imgmas, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         rect = cv2.minAreaRect(contours[0])
@@ -167,7 +216,7 @@ class RiceSeeds(modellib.MaskRCNN):
 
         return pd.concat(summarylist)
 
-    def seeds_detect(self, image, verbose = 1, score_threshold = 0.95):
+    def seeds_detect(self, image, verbose = 1, score_threshold = 0.95, original_size = None):
 
         self.image = image
         if type(image) is not list:
@@ -191,7 +240,11 @@ class RiceSeeds(modellib.MaskRCNN):
         if len(self.bb)>0:
           self.maskcolors = random_colors(len(self.bb))
           self.ids = list(range(len(self.bb)))
-        
+
+        if score_threshold is not None:
+          self._size = original_size
+        else:
+          self._size = None
         return results
     
     def plot_all_detections(self, figsize = (15,15),show_bbox=True, show_mask=True,objfontscale = 0.8):
