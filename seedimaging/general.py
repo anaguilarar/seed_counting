@@ -179,7 +179,7 @@ class RiceSeeds(modellib.MaskRCNN):
 
         return pd.concat(summarylist)
 
-    def seeds_detect(self, image, verbose = 1):
+    def seeds_detect(self, image, verbose = 1, score_threshold = 0.95):
 
         self.image = image
         if type(image) is not list:
@@ -187,10 +187,16 @@ class RiceSeeds(modellib.MaskRCNN):
         
         results = self.detect(image, verbose = verbose)
 
-        self.bb= results[0]['rois']
-        self.masks = results[0]['masks']
-        self.scores = results[0]['scores']
-        self.class_ids = results[0]['class_ids']
+        if score_threshold:
+          truepred = results[0]['scores']>=score_threshold
+        else:
+          truepred = results[0]['scores']>=0
+          
+        self.bb= results[0]['rois'][truepred]
+        self.masks = results[0]['masks'][truepred]
+        self.scores = results[0]['scores'][truepred]
+        self.class_ids = results[0]['class_ids'][truepred]
+        
         self.maskcolors = random_colors(len(self.bb))
         self.ids = list(range(len(self.bb)))
 
