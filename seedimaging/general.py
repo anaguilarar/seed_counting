@@ -99,7 +99,7 @@ class RiceSeeds(modellib.MaskRCNN):
 
         col = self.maskcolors[id]
 
-        imgclipped = copy.deepcopy(self._clip_image(self.image, self.bbs[id]))
+        imgclipped = copy.deepcopy(self._clip_image(self.image, self.bb[id]))
         maskimage = copy.deepcopy(self._get_mask(id = id, pad_factor=None))
 
         img = _apply_mask(imgclipped, (maskimage*1).astype(np.uint8), col, alpha=0.2)
@@ -126,7 +126,7 @@ class RiceSeeds(modellib.MaskRCNN):
 
         return m
 
-    def _get_mask(self, id = None, pad_factor = 2):
+    def _get_mask(self, id = None, pad_factor = 10):
         if id is None:
             id = 0
         if self._size is not None:
@@ -138,6 +138,7 @@ class RiceSeeds(modellib.MaskRCNN):
             
         maskimage = self._clip_image(maskc, bb)
         if pad_factor is not None:
+            pad_factor = int(maskc.shape[0]*pad_factor/100)
             maskimage = pad_mask_images(maskimage, padding_factor=pad_factor)
             
         return maskimage
