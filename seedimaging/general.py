@@ -174,20 +174,24 @@ class RiceSeeds(modellib.MaskRCNN):
             image =[image]
         
         results = self.detect(image, verbose = verbose)
-
+        self.bb, self.masks, self.scores, self.class_ids = None, None, None, None
+      
         if score_threshold:
-          truepred = results[0]['scores']>=score_threshold
+          pos = [i for i, val in enumerate(results[0]['scores']) if val >= score_threshold]
+          if len(pos)>0:
+            self.bb= results[0]['rois'][pos]
+            self.masks = results[0]['masks'][:,:,pos]
+            self.scores = results[0]['scores'][pos]
+            self.class_ids = results[0]['class_ids'][pos]
         else:
-          truepred = results[0]['scores']>=0
-          
-        self.bb= results[0]['rois'][truepred]
-        self.masks = results[0]['masks'][truepred]
-        self.scores = results[0]['scores'][truepred]
-        self.class_ids = results[0]['class_ids'][truepred]
+            self.bb= results[0]['rois']
+            self.masks = results[0]['masks']
+            self.scores = results[0]['scores']
+            self.class_ids = results[0]['class_ids']
+        if self.bb:
+          self.maskcolors = random_colors(len(self.bb))
+          self.ids = list(range(len(self.bb)))
         
-        self.maskcolors = random_colors(len(self.bb))
-        self.ids = list(range(len(self.bb)))
-
         return results
     
     def plot_all_detections(self, figsize = (15,15),show_bbox=True, show_mask=True,objfontscale = 0.8):
