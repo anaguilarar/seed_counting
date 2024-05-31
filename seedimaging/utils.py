@@ -7,14 +7,15 @@ from skimage.io import imread
 import cv2
 
 def read_image(path, shrink_size = 650, newsize = None):
-  assert os.path.exists(path)
+  assert os.path.exists(path) ## file path does not exist
 
   image = imread(path)
-  if image.shape[0]>650:
-    shrink_factor = 650/image.shape[0] if image.shape[0]>= image.shape[1] else 700/image.shape[1]
-    newsize = int(image.shape[0] * shrink_factor), int(image.shape[1] * shrink_factor)
-    
-    image = cv2.resize(image, newsize)
+  if shrink_size:
+    if image.shape[0]>shrink_size:
+      shrink_factor = shrink_size/image.shape[0] if image.shape[0]>= image.shape[1] else shrink_size/image.shape[1]
+      newsize = int(image.shape[0] * shrink_factor), int(image.shape[1] * shrink_factor)
+      
+      image = cv2.resize(image, newsize)
 
   return image
 
