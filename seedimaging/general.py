@@ -25,7 +25,7 @@ def get_boundingboxfromseg(mask):
     ymin = np.min(pos[0])
     ymax = np.max(pos[0])
     
-    return([xmin, ymin, xmax, ymax])
+    return([ymin, xmin, ymax, xmax])
   
 def getmidlewidthcoordinates(pinit,pfinal,alpha):
 
