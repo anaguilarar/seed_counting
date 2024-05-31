@@ -136,7 +136,7 @@ class RiceSeeds(modellib.MaskRCNN):
             maskc = self.masks[:,:,id]
             bb = self.bbs[id]
             
-        maskimage = self._clip_image(self.masks[:,:,id], bb)
+        maskimage = self._clip_image(maskc, bb)
         if pad_factor is not None:
             maskimage = pad_mask_images(maskimage, padding_factor=pad_factor)
             
