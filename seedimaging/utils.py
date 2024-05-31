@@ -4,6 +4,7 @@ import requests
 from urllib.parse import urlparse
 import os
 from skimage.io import imread
+import cv2
 
 def read_image(path, shrink_size = 650, newsize = None):
   assert os.path.exists(path)
