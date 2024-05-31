@@ -208,7 +208,7 @@ class RiceSeeds(modellib.MaskRCNN):
         #ax.imshow(m)
 
         ax.imshow(img)
-        
+        return f
 
     def __init__(self, config=None, weigths = None, model_suffix = 'h5') -> None:
 
