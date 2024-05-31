@@ -11,7 +11,7 @@ from .image_functions import display_instances_cv
 import cv2
 
 from .utils import *
-from .image_functions import add_label,random_colors
+from .image_functions import add_label,random_colors, _apply_mask
 
 import copy
 import math
@@ -29,18 +29,6 @@ def getmidleheightcoordinates(pinit,pfinal,alpha):
   xhalf=math.sin(alpha) * euclidean_distance(pinit,pfinal)/2 + pinit[0]
   yhalf=math.cos(alpha) * euclidean_distance(pinit,pfinal)/2 + pinit[1]
   return int(xhalf),int(yhalf)
-
-
-def _apply_mask(image, mask, color, alpha=0.5):
-    """Apply the given mask to the image.
-    """
-    for c in range(3):
-        image[:, :, c] = np.where(mask == 1,
-                                  image[:, :, c] *
-                                  (1 - alpha) + alpha * color[c] * 255,
-                                  image[:, :, c])
-    return image
-
 
 def pad_mask_images(mask, padding_factor = 2):
 
