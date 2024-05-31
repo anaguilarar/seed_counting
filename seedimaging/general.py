@@ -188,7 +188,7 @@ class RiceSeeds(modellib.MaskRCNN):
             self.masks = results[0]['masks']
             self.scores = results[0]['scores']
             self.class_ids = results[0]['class_ids']
-        if self.bb:
+        if len(self.bb)>0:
           self.maskcolors = random_colors(len(self.bb))
           self.ids = list(range(len(self.bb)))
         
