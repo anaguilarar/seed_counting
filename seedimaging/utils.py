@@ -3,7 +3,19 @@ from io import BytesIO
 import requests
 from urllib.parse import urlparse
 import os
+from skimage.io import imread
 
+def read_image(path, shrink_size = 650, newsize = None):
+  assert os.path.exists(path)
+
+  image = imread(path)
+  if image.shape[0]>650:
+    shrink_factor = 650/image.shape[0] if image.shape[0]>= image.shape[1] else 700/image.shape[1]
+    newsize = int(image.shape[0] * shrink_factor), int(image.shape[1] * shrink_factor)
+    
+    image = cv2.resize(image, newsize)
+
+  return image
 
 
 def downloadzip(urlpath, foldername = 'models')-> None: 
